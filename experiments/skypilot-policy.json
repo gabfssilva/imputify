@@ -1,0 +1,85 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "ec2:RunInstances",
+            "Resource": "arn:aws:ec2:*::image/ami-*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": "ec2:RunInstances",
+            "Resource": [
+                "arn:aws:ec2:*:476325398686:instance/*",
+                "arn:aws:ec2:*:476325398686:network-interface/*",
+                "arn:aws:ec2:*:476325398686:subnet/*",
+                "arn:aws:ec2:*:476325398686:volume/*",
+                "arn:aws:ec2:*:476325398686:security-group/*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ec2:TerminateInstances",
+                "ec2:DeleteTags",
+                "ec2:StartInstances",
+                "ec2:CreateTags",
+                "ec2:StopInstances"
+            ],
+            "Resource": "arn:aws:ec2:*:476325398686:instance/*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ec2:Describe*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ec2:CreateSecurityGroup",
+                "ec2:AuthorizeSecurityGroupIngress",
+                "ec2:DeleteSecurityGroup",
+                "ec2:ModifyInstanceAttribute"
+            ],
+            "Resource": "arn:aws:ec2:*:476325398686:*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": "iam:CreateServiceLinkedRole",
+            "Resource": "*",
+            "Condition": {
+                "StringEquals": {
+                    "iam:AWSServiceName": "spot.amazonaws.com"
+                }
+            }
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "iam:GetRole",
+                "iam:PassRole",
+                "iam:CreateRole",
+                "iam:AttachRolePolicy"
+            ],
+            "Resource": "arn:aws:iam::476325398686:role/skypilot-v1"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "iam:GetInstanceProfile",
+                "iam:CreateInstanceProfile",
+                "iam:AddRoleToInstanceProfile"
+            ],
+            "Resource": "arn:aws:iam::476325398686:instance-profile/skypilot-v1"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:*"
+            ],
+            "Resource": "*"
+        }
+    ]
+}

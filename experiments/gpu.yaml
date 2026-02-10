@@ -1,0 +1,19 @@
+resources:
+  cloud: runpod
+  accelerators: L40S:1
+  cpus: 4+
+  memory: 16+
+  disk_size: 80
+  use_spot: true
+
+workdir: .
+
+setup: |
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  ~/.local/bin/uv sync --extra gpu --extra cuda --extra experiments
+
+run: |
+  ~/.local/bin/uv run python -m experiments.runner ${IMPUTER} \
+    ${SCENARIO:+--scenario $SCENARIO} \
+    ${RATE:+--rate $RATE} \
+    ${SEED:+--seed $SEED}

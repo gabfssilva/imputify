@@ -1,0 +1,29 @@
+pools:
+  cpu:
+    size: 10
+    prefix: exp-cpu
+    idle_timeout: 5
+    resources:
+      cloud: runpod
+      instance_type: cpu5c-4-8
+      disk_size: 20
+    setup: |
+      curl -LsSf https://astral.sh/uv/install.sh | sh
+      ~/.local/bin/uv sync --extra cpu --extra experiments
+
+  gpu:
+    size: 20
+    prefix: exp-gpu
+    idle_timeout: 5
+    resources:
+      cloud: runpod
+      accelerators: A40:1
+      cpus: 8+
+      memory: 32+
+      disk_size: 60
+      use_spot: true
+    setup: |
+      curl -LsSf https://astral.sh/uv/install.sh | sh
+      ~/.local/bin/uv sync --extra gpu --extra all
+
+workdir: .

@@ -1,0 +1,353 @@
+imputers:
+  statistical_mean:
+    ____pool____: cpu
+    ____type____: imputify.StatisticalImputer
+    numeric_strategy: mean
+
+  statistical_median:
+    ____pool____: cpu
+    ____type____: imputify.StatisticalImputer
+    numeric_strategy: median
+
+  knn_k5:
+    ____pool____: cpu
+    ____type____: imputify.KNNImputer
+    n_neighbors: 5
+
+  mice_iter10_posterior:
+    ____pool____: cpu
+    ____type____: imputify.MICEImputer
+    max_iter: 10
+    sample_posterior: true
+    tol: 0.001
+
+  missforest_n100_sqrt:
+    ____pool____: cpu
+    ____type____: imputify.MissForestImputer
+    n_estimators: 100
+    max_iter: 10
+    max_features: sqrt
+    min_samples_leaf: 1
+
+  xgboost_n100_d4_ss08:
+    ____pool____: cpu
+    ____type____: imputify.XGBoostImputer
+    n_estimators: 100
+    max_depth: 4
+    learning_rate: 0.1
+    subsample: 0.8
+    colsample_bytree: 0.8
+    reg_lambda: 1.0
+    max_iter: 10
+
+  dae_h128:
+    ____pool____: cpu
+    ____type____: imputify.DAEImputer
+    hidden_dim: 128
+    latent_dim: 64
+    noise_level: 0.15
+    dropout: 0.1
+    batch_size: 64
+    epochs: 200
+    lr: 0.001
+    device: auto
+    verbose: false
+
+  vae_h128:
+    ____pool____: cpu
+    ____type____: imputify.VAEImputer
+    hidden_dim: 128
+    latent_dim: 32
+    kl_weight: 1.0
+    dropout: 0.1
+    batch_size: 64
+    epochs: 200
+    lr: 0.001
+    device: auto
+    verbose: false
+
+  gain_h128:
+    ____pool____: cpu
+    ____type____: imputify.GAINImputer
+    hidden_dim: 128
+    alpha: 10.0
+    hint_rate: 0.9
+    g_lr: 0.0001
+    d_lr: 0.0001
+    batch_size: 64
+    epochs: 200
+    device: auto
+    verbose: false
+
+  gpt2_large_lora:
+    ____pool____: gpu
+    ____type____: imputify.DecoderOnlyImputer
+    model:
+      ____type____: transformers.AutoModelForCausalLM.from_pretrained
+      pretrained_model_name_or_path: openai-community/gpt2-large
+      device_map: auto
+      torch_dtype:
+        ____type____: torch.float16
+    peft:
+      ____type____: peft.LoraConfig
+      task_type: CAUSAL_LM
+      r: 16
+      lora_alpha: 32
+      lora_dropout: 0.1
+      target_modules: [c_attn, c_proj]
+      bias: none
+    training_args:
+      ____type____: transformers.TrainingArguments
+      output_dir: /tmp/checkpoints/gpt2
+      num_train_epochs: 100
+      lr_scheduler_type: cosine
+      per_device_train_batch_size: 8
+      learning_rate: 0.00005
+      warmup_ratio: 0.1
+      max_grad_norm: 1.0
+      fp16: true
+      optim: adamw_torch
+      disable_tqdm: false
+      logging_steps: 1
+      log_level: error
+      report_to: []
+    sequence_format: json
+    temperature: 0.3
+    top_p: 0.95
+    max_new_tokens: 10
+    resume_from_checkpoint: false
+    validation_split: 0.1
+    early_stopping_patience: 5
+    early_stopping_threshold: 0.001
+
+  qwen3_14b_4bit_lora:
+    ____pool____: gpu
+    ____type____: imputify.DecoderOnlyImputer
+    model:
+      ____type____: transformers.AutoModelForCausalLM.from_pretrained
+      pretrained_model_name_or_path: Qwen/Qwen3-14B
+      device_map: auto
+      quantization_config:
+        ____type____: transformers.BitsAndBytesConfig
+        load_in_4bit: true
+        bnb_4bit_compute_dtype:
+          ____type____: torch.bfloat16
+        bnb_4bit_quant_type: nf4
+        bnb_4bit_use_double_quant: true
+    peft:
+      ____type____: peft.LoraConfig
+      task_type: CAUSAL_LM
+      r: 16
+      lora_alpha: 32
+      lora_dropout: 0.1
+      target_modules: all-linear
+      bias: none
+    training_args:
+      ____type____: transformers.TrainingArguments
+      output_dir: /tmp/checkpoints/qwen3
+      num_train_epochs: 15
+      lr_scheduler_type: cosine
+      per_device_train_batch_size: 10
+      learning_rate: 0.00005
+      warmup_ratio: 0.1
+      max_grad_norm: 1.0
+      bf16: true
+      optim: adamw_torch
+      disable_tqdm: false
+      logging_steps: 1
+      log_level: error
+      report_to: []
+    sequence_format: json
+    temperature: 0.3
+    top_p: 0.95
+    max_new_tokens: 10
+    resume_from_checkpoint: false
+    validation_split: 0.1
+    early_stopping_patience: 3
+    early_stopping_threshold: 0.001
+
+scenarios:
+  - name: iris-MCAR
+    dataset: iris
+    patterns:
+      - incomplete_vars: [petal_width, sepal_length]
+        mechanism: MCAR
+
+  - name: iris-MAR
+    dataset: iris
+    patterns:
+      - incomplete_vars: [petal_width]
+        mechanism: MAR
+
+  - name: iris-MNAR
+    dataset: iris
+    patterns:
+      - incomplete_vars: [petal_length]
+        mechanism: MNAR
+
+  - name: wine-MCAR
+    dataset: wine
+    patterns:
+      - incomplete_vars: [alcohol, malic_acid]
+        mechanism: MCAR
+
+  - name: wine-MAR
+    dataset: wine
+    patterns:
+      - incomplete_vars: [color_intensity]
+        mechanism: MAR
+
+  - name: wine-MNAR
+    dataset: wine
+    patterns:
+      - incomplete_vars: [proline]
+        mechanism: MNAR
+
+  - name: diabetes-MCAR
+    dataset: diabetes
+    patterns:
+      - incomplete_vars: [bp, s3]
+        mechanism: MCAR
+
+  - name: diabetes-MAR
+    dataset: diabetes
+    patterns:
+      - incomplete_vars: [bmi]
+        mechanism: MAR
+
+  - name: diabetes-MNAR
+    dataset: diabetes
+    patterns:
+      - incomplete_vars: [s5]
+        mechanism: MNAR
+
+  - name: breast_cancer-MCAR
+    dataset: breast_cancer
+    patterns:
+      - incomplete_vars: [mean_radius, mean_texture]
+        mechanism: MCAR
+
+  - name: breast_cancer-MAR
+    dataset: breast_cancer
+    patterns:
+      - incomplete_vars: [mean_area]
+        mechanism: MAR
+
+  - name: breast_cancer-MNAR
+    dataset: breast_cancer
+    patterns:
+      - incomplete_vars: [worst_concavity]
+        mechanism: MNAR
+
+  - name: titanic-MCAR
+    dataset: titanic
+    patterns:
+      - incomplete_vars: [age, fare]
+        mechanism: MCAR
+
+  - name: titanic-MAR
+    dataset: titanic
+    patterns:
+      - incomplete_vars: [age]
+        mechanism: MAR
+
+  - name: titanic-MNAR
+    dataset: titanic
+    patterns:
+      - incomplete_vars: [fare]
+        mechanism: MNAR
+
+  - name: heart_disease-MCAR
+    dataset: heart_disease
+    patterns:
+      - incomplete_vars: [resting_bp, cholesterol]
+        mechanism: MCAR
+
+  - name: heart_disease-MAR
+    dataset: heart_disease
+    patterns:
+      - incomplete_vars: [max_heart_rate]
+        mechanism: MAR
+
+  - name: heart_disease-MNAR
+    dataset: heart_disease
+    patterns:
+      - incomplete_vars: [num_major_vessels]
+        mechanism: MNAR
+
+  - name: blood_transfusion-MCAR
+    dataset: blood_transfusion
+    patterns:
+      - incomplete_vars: [recency, time]
+        mechanism: MCAR
+
+  - name: blood_transfusion-MAR
+    dataset: blood_transfusion
+    patterns:
+      - incomplete_vars: [monetary]
+        mechanism: MAR
+
+  - name: blood_transfusion-MNAR
+    dataset: blood_transfusion
+    patterns:
+      - incomplete_vars: [frequency]
+        mechanism: MNAR
+
+  - name: malaysia_house_prices-MCAR
+    dataset: malaysia_house_prices
+    patterns:
+      - incomplete_vars: [median_psf, transactions]
+        mechanism: MCAR
+
+  - name: malaysia_house_prices-MAR
+    dataset: malaysia_house_prices
+    patterns:
+      - incomplete_vars: [median_psf]
+        mechanism: MAR
+
+  - name: malaysia_house_prices-MNAR
+    dataset: malaysia_house_prices
+    patterns:
+      - incomplete_vars: [transactions]
+        mechanism: MNAR
+
+  - name: ilpd-MCAR
+    dataset: ilpd
+    patterns:
+      - incomplete_vars: [total_bilirubin, albumin]
+        mechanism: MCAR
+
+  - name: ilpd-MAR
+    dataset: ilpd
+    patterns:
+      - incomplete_vars: [albumin_globulin_ratio]
+        mechanism: MAR
+
+  - name: ilpd-MNAR
+    dataset: ilpd
+    patterns:
+      - incomplete_vars: [alkaline_phosphotase]
+        mechanism: MNAR
+
+  - name: student_lifestyle-MCAR
+    dataset: student_lifestyle
+    patterns:
+      - incomplete_vars: [study_hours, sleep_hours]
+        mechanism: MCAR
+
+  - name: student_lifestyle-MAR
+    dataset: student_lifestyle
+    patterns:
+      - incomplete_vars: [social_hours]
+        mechanism: MAR
+
+  - name: student_lifestyle-MNAR
+    dataset: student_lifestyle
+    patterns:
+      - incomplete_vars: [physical_activity_hours]
+        mechanism: MNAR
+
+missing_rates: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+
+seeds: [42, 43, 44, 45, 46, 47, 48, 49, 50, 51]
+llm_seeds: [42, 43, 44]
