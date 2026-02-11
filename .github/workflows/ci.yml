@@ -23,4 +23,4 @@ jobs:
       - name: Install dependencies
         run: uv sync --dev --extra cpu
       - name: Test with pytest
-        run: uv run pytest
+        run: uv run --extra cpu pytest
